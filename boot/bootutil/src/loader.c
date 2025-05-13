@@ -2759,6 +2759,7 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
         for (slot = 0; slot < BOOT_NUM_SLOTS; slot++) {
             fa_id = flash_area_id_from_multi_image_slot(image_index, slot);
             rc = flash_area_open(fa_id, &BOOT_IMG_AREA(state, slot));
+            if(slot > 0) break;
             assert(rc == 0);
 
             if (rc != 0) {
