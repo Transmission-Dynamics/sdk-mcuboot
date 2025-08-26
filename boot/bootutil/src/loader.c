@@ -2985,6 +2985,7 @@ context_boot_go(struct boot_loader_state *state, struct boot_rsp *rsp)
         for (slot = 0; slot < BOOT_NUM_SLOTS; slot++) {
             fa_id = flash_area_id_from_multi_image_slot(image_index, slot);
             rc = flash_area_open(fa_id, &BOOT_IMG_AREA(state, slot));
+            if(slot > 0) break;
             assert(rc == 0);
 
             if (rc != 0) {
@@ -3485,6 +3486,10 @@ boot_select_or_erase(struct boot_loader_state *state)
                      (active_slot == BOOT_PRIMARY_SLOT) ? "primary" : "secondary");
         rc = boot_scramble_region(fap, 0, flash_area_get_size(fap), false);
         assert(rc == 0);
+<<<<<<< HEAD
+=======
+
+>>>>>>> td_fork
         rc = -1;
     } else {
         if (active_swap_state->copy_done != BOOT_FLAG_SET) {
