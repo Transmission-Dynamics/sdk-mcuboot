@@ -142,11 +142,19 @@ boot_read_image_headers(struct boot_loader_state *state, bool require_all, struc
     int i;
 
     for (i = 0; i < BOOT_NUM_SLOTS; i++) {
-        rc = BOOT_HOOK_CALL(boot_read_image_header_hook, BOOT_HOOK_REGULAR,
-                            BOOT_CURR_IMG(state), i, boot_img_hdr(state, i));
-        if (rc == BOOT_HOOK_REGULAR)
-        {
-            rc = boot_read_image_header(state, i, boot_img_hdr(state, i), bs);
+        /* If the flash area pointer for slot is NULL (e.g. secondary slot on
+         * external flash that failed to open), treat it the same as a read error
+         * and apply the require_all logic without dereferencing the NULL pointer.
+         */
+        if (BOOT_IMG_AREA(state, i) == NULL) {
+            rc = BOOT_EFLASH;
+        } else {
+            rc = BOOT_HOOK_CALL(boot_read_image_header_hook, BOOT_HOOK_REGULAR,
+                                BOOT_CURR_IMG(state), i, boot_img_hdr(state, i));
+            if (rc == BOOT_HOOK_REGULAR)
+            {
+                rc = boot_read_image_header(state, i, boot_img_hdr(state, i), bs);
+            }
         }
         if (rc != 0) {
             /* If `require_all` is set, fail on any single fail, otherwise
@@ -381,6 +389,13 @@ boot_open_all_flash_areas(struct boot_loader_state *state)
         for (slot = 0; slot < BOOT_NUM_SLOTS; slot++) {
             fa_id = flash_area_id_from_multi_image_slot(image_index, slot);
             rc = flash_area_open(fa_id, &BOOT_IMG_AREA(state, slot));
+
+            /*
+                * Secondary slot may be unavailable if external flash is used and fails to initialize,
+                * but booting should proceed as long as the primary slot is available.
+            */
+            if(slot > BOOT_SLOT_PRIMARY) rc = 0;
+
             assert(rc == 0);
 
             if (rc != 0) {
